@@ -18,9 +18,11 @@ Once you set up the virtual environment (named  `sinkhole`), you can activate it
 
 `conda activate sinkhole`
 
-### Data
+### Dataset
 
-Copy the all the files in a directory named `data` in this repository. Please contact junfeng.zhu@uky.edu to get access to the data while we work on public release of the data.
+Our dataset has been publicly released at Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5789436.svg)](https://doi.org/10.5281/zenodo.5789436)
+
+Please download all the files in a directory named `data` in this repository. The data is released under the Creative Commons Attribution 4.0 license.
 
 ## Training
 
