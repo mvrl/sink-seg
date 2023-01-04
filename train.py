@@ -10,6 +10,7 @@ from config import cfg
 
 
 def main():
+    print('testing')
     """
     This script trains the model.
     Train (and val) loaders are used for training (and saving checkpoints).
