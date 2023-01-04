@@ -54,12 +54,15 @@ def evaluate():
             'The directory with trained model does not exist! Make sure cfg.train.out_dir in config.py has the correct directory name'
         )
 
-    from model import Unet
+    #from drive.MyDrive.ML_dataset.model import Unet
     model = Unet(in_channels=cfg.data.input_channels,
                  out_channels=2,
                  feature_reduction=4,
                  norm_type=cfg.model.norm_type)
-    model.to('cuda:0')
+
+    device = f'cuda:0' if torch.cuda.is_available() else 'cpu'
+    print(f"using device: {device}")
+    model.to(device)
 
     # which checkpoint to load: best (lowest val loss) or the one saved at the end of training
     if eval_mode == 'best':
@@ -80,9 +83,9 @@ def evaluate():
     num_classes = 2
     """ Find out best threshold on the val set """
     print('\nFinding out the best threshold on val loader')
-    best_iou = torch.zeros(1).cuda()
-    best_acc = torch.zeros(1).cuda()
-    best_threshold = torch.zeros(1).cuda()
+    best_iou = torch.zeros(1).to(device)
+    best_acc = torch.zeros(1).to(device)
+    best_threshold = torch.zeros(1).to(device)
 
     acc_log = []
     iou_log = []
@@ -99,15 +102,19 @@ def evaluate():
 
         with torch.no_grad():
             for i, data in enumerate(data_loader_val):
-                shaded = data[0].cuda()
-                dem = data[1].cuda().unsqueeze(1)
-                naip_image = data[2].cuda()
-                labels = data[3].long().cuda()
-                dem_dxy = data[5].cuda()
-                dem_dxy_pre = data[6].cuda().unsqueeze(1)
+                shaded = data[0].to(device)
+                dem = data[1].to(device).unsqueeze(1)
+                naip_image = data[2].to(device)
+                labels = data[3].long().to(device)
+                dem_dxy = data[5].to(device)
+                dem_dxy_pre = data[6].to(device).unsqueeze(1)
+                shaded_naip = data[7].to(device)
+                dem_naip = data[8].to(device)
+                dem_dxy_naip = data[9].to(device)
+                dem_dxy_pre_naip = data[10].to(device)
 
-                predictions = model(shaded, dem, naip_image, dem_dxy,
-                                    dem_dxy_pre)
+                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                    shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
 
                 predictions = torch.softmax(predictions, dim=1)
 
@@ -135,6 +142,8 @@ def evaluate():
                     pred=pred_final,
                     size=cfg.data.cutout_size,
                     num_class=num_classes)
+
+                #print(dem_dxy_naip.shape)
 
         # compute metrics from the confusion matrix
         pos = confusion_matrix.sum(1)
@@ -190,21 +199,26 @@ def evaluate():
         result_file.write(str(best_threshold))
     """ Evaluate on the test set """
     print('\nComputing test set metrics')
-    iou_threshold = torch.zeros(1).cuda()
-    acc_threshold = torch.zeros(1).cuda()
+    iou_threshold = torch.zeros(1).to(device)
+    acc_threshold = torch.zeros(1).to(device)
 
     confusion_matrix = np.zeros((num_classes, num_classes))
 
     with torch.no_grad():
         for i, data in enumerate(data_loader_test):
-            shaded = data[0].cuda()
-            dem = data[1].cuda().unsqueeze(1)
-            naip_image = data[2].cuda()
-            labels = data[3].long().cuda()
-            dem_dxy = data[5].cuda()
-            dem_dxy_pre = data[6].cuda().unsqueeze(1)
+            shaded = data[0].to(device)
+            dem = data[1].to(device).unsqueeze(1)
+            naip_image = data[2].to(device)
+            labels = data[3].long().to(device)
+            dem_dxy = data[5].to(device)
+            dem_dxy_pre = data[6].to(device).unsqueeze(1)
+            shaded_naip = data[7].to(device)
+            dem_naip = data[8].to(device)
+            dem_dxy_naip = data[9].to(device)
+            dem_dxy_pre_naip = data[10].to(device)
 
-            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
+            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
 
             if predictions.shape[2] == 420:
                 starty = 0
@@ -276,13 +290,18 @@ def evaluate():
 
     with torch.no_grad():
         for i, data in enumerate(data_loader):
-            shaded = data[0].cuda()
-            dem = data[1].cuda().unsqueeze(1)
-            naip_image = data[2].cuda()
-            labels = data[3].long().cuda()
             idx = data[4].detach().cpu().numpy()
-            dem_dxy = data[5].cuda()
-            dem_dxy_pre = data[6].cuda().unsqueeze(1)
+
+            shaded = data[0].to(device)
+            dem = data[1].to(device).unsqueeze(1)
+            naip_image = data[2].to(device)
+            labels = data[3].long().to(device)
+            dem_dxy = data[5].to(device)
+            dem_dxy_pre = data[6].to(device).unsqueeze(1)
+            shaded_naip = data[7].to(device)
+            dem_naip = data[8].to(device)
+            dem_dxy_naip = data[9].to(device)
+            dem_dxy_pre_naip = data[10].to(device)
 
             num_columns = 7 if data_mode == 'val' else 35
             row, col = divmod(idx, num_columns)
@@ -292,7 +311,8 @@ def evaluate():
             right = (col + 1) * cutout_size[0]
             lower = (row + 1) * cutout_size[1]
 
-            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
+            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
 
             predictions = torch.softmax(predictions, dim=1)
 

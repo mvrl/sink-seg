@@ -54,6 +54,7 @@ class dataset_sinkhole(Dataset):
         self.to_tensor = transforms.ToTensor()
 
         # Normalization methods and values
+        #from drive.MyDrive.ML_dataset.config import cfg
         from config import cfg
         self.normalization_shaded = cfg.data.normalize_shaded
         self.normalization_dem = cfg.data.normalize_dem
@@ -167,7 +168,7 @@ class dataset_sinkhole(Dataset):
             dem_np = (dem_np - 0.68867725) / (0.12318235)
         elif self.normalization_dem == '0_to_1':
             dem_np = (dem_np - self.dem_min) / (self.dem_max - self.dem_min
-                                               )  # [0, 1]
+                                                )  # [0, 1]
             # pass # already normalized this way
         elif self.normalization_dem == 'instance':
             min_now = np.min(dem_np)
@@ -241,7 +242,29 @@ class dataset_sinkhole(Dataset):
         dem_dy = torch.from_numpy(dem_dy).unsqueeze(0)
         dem_dxy = torch.cat([dem_dx, dem_dy], dim=0)
 
-        return image, dem_tensor, naip, label, idx, dem_dxy, dem_dxy_pre_tensor
+        # New added
+        # combine dem and its varients with naip
+        image_naip = torch.cat([image, naip], dim=0)
+        dem_naip = torch.cat([dem_tensor.unsqueeze(0), naip], dim=0)
+        # print(dem_dxy.shape)
+        # print(naip.shape)
+        if self.mode != 'train':
+            diff = max(dem_dxy.shape[1], naip.shape[1]) - min(dem_dxy.shape[1], naip.shape[1])
+            dem_dxy_naip = torch.cat([nn.ZeroPad2d((0, 0, 0, diff))(dem_dxy), naip], dim=0)
+        else:
+            dem_dxy_naip = torch.cat([dem_dxy, naip], dim=0)
+        dem_dxy_pre_naip = torch.cat([dem_dxy_pre_tensor.unsqueeze(0), naip], dim=0)
+
+        # print('image size:', image.shape)
+        # print('dem_tensor size:', dem_tensor.shape)
+        # print('naip size:', naip.shape)
+        # print('label size:', label.shape)
+        # print('dem_dxy size:', dem_dxy.shape)
+        # print('dem_dxy_pre_tensor', dem_dxy_pre_tensor.shape)
+        # print(dem_dxy_naip.shape)
+
+        return image, dem_tensor, naip, label, idx, dem_dxy, dem_dxy_pre_tensor, \
+            image_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip
 
 
 def get_data(cfg):
@@ -401,6 +424,9 @@ def get_data(cfg):
                                      dem_dx=dem_dx_train,
                                      dem_dy=dem_dy_train,
                                      dem_dxy_pre=dem_dxy_train_pre)
+
+    # added for debugging
+    #train_dataset[0]
 
     val_dataset = dataset_sinkhole(mode='val',
                                    image=image_val,

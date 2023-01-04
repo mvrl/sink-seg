@@ -10,7 +10,6 @@ from config import cfg
 
 
 def main():
-    print('testing')
     """
     This script trains the model.
     Train (and val) loaders are used for training (and saving checkpoints).
@@ -21,7 +20,10 @@ def main():
                  out_channels=2,
                  feature_reduction=4,
                  norm_type=cfg.model.norm_type)
-    model.to('cuda:0')
+
+    device = f'cuda:0' if torch.cuda.is_available() else 'cpu'
+    print(f"using device: {device}")
+    model.to(device)
 
     optim = torch.optim.Adam(model.parameters(),
                              lr=cfg.train.learning_rate,
@@ -37,7 +39,7 @@ def main():
         optim, step_size=cfg.train.lr_decay_every, gamma=cfg.train.lr_decay)
 
     # loss function
-    weight = torch.tensor([0.05, 1.0]).cuda()
+    weight = torch.tensor([0.05, 1.0]).to(device)
     criterion = nn.CrossEntropyLoss(weight=weight)
 
     # training logs
@@ -66,19 +68,24 @@ def main():
         for i, data in enumerate(train_loader):
             optim.zero_grad()
 
-            shaded = data[0].cuda()
-            dem = data[1].cuda().unsqueeze(1)
-            naip_image = data[2].cuda()
-            labels = data[3].long().cuda()
-            dem_dxy = data[5].cuda()
-            dem_dxy_pre = data[6].cuda().unsqueeze(1)
+            shaded = data[0].to(device)
+            dem = data[1].to(device).unsqueeze(1)
+            naip_image = data[2].to(device)
+            labels = data[3].long().to(device)
+            dem_dxy = data[5].to(device)
+            dem_dxy_pre = data[6].to(device).unsqueeze(1)
+            shaded_naip = data[7].to(device)
+            dem_naip = data[8].to(device)
+            dem_dxy_naip = data[9].to(device)
+            dem_dxy_pre_naip = data[10].to(device)
 
             if i == 0:
                 print_now = True
             else:
                 print_now = False
 
-            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
+            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
 
             loss = criterion(predictions, labels)
 
@@ -90,7 +97,11 @@ def main():
 
             # printing
             if (i + 1) % 20 == 0:
-                print('[Ep ', epoch + 1, '] train loss: ', loss_train / (i + 1))
+                print('[Ep ', epoch + 1, '] train loss: ',
+                      loss_train / (i + 1))
+
+            # added for debugging. Comment when doing real training
+            #break
 
         # end of training for this epoch
         loss_train /= len(train_loader)
@@ -101,15 +112,20 @@ def main():
         with torch.no_grad():
             for i, data in enumerate(val_loader):
                 optim.zero_grad()  # clear gradients
-                shaded = data[0].cuda()
-                dem = data[1].cuda().unsqueeze(1)
-                naip_image = data[2].cuda()
-                labels = data[3].long().cuda()
-                dem_dxy = data[5].cuda()
-                dem_dxy_pre = data[6].cuda().unsqueeze(1)
 
-                predictions = model(shaded, dem, naip_image, dem_dxy,
-                                    dem_dxy_pre)
+                shaded = data[0].to(device)
+                dem = data[1].to(device).unsqueeze(1)
+                naip_image = data[2].to(device)
+                labels = data[3].long().to(device)
+                dem_dxy = data[5].to(device)
+                dem_dxy_pre = data[6].to(device).unsqueeze(1)
+                shaded_naip = data[7].to(device)
+                dem_naip = data[8].to(device)
+                dem_dxy_naip = data[9].to(device)
+                dem_dxy_pre_naip = data[10].to(device)
+
+                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                    shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
 
                 loss = criterion(predictions, labels)
 

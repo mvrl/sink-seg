@@ -8,14 +8,16 @@ cfg = edict()
 cfg.model = edict()
 cfg.model.name = 'unet'
 cfg.model.norm_type = 'batch'  # 'batch', instance
+cfg.model.fusion = True  # whether to use fusion in the model
 
 # Data
 cfg.data = edict()
-cfg.data.data_dir = './data'
+cfg.data.data_dir = './drive/MyDrive/ML_dataset'
 cfg.data.name = 'full_tiles'
 
 # define model input. options: 'dem', 'shaded_relief', 'naip', 'dem_derivative', 'dem_dxy_pre'
-cfg.data.input_type = 'dem_derivative'
+# new added: 'shaded_relief_naip', 'dem_naip', 'dem_derivative_naip', 'dem_dxy_pre_naip'
+cfg.data.input_type = 'dem_dxy_pre_naip'
 
 if cfg.data.input_type == 'dem':
     cfg.data.input_channels = 1
@@ -27,6 +29,14 @@ elif cfg.data.input_type == 'dem_derivative':
     cfg.data.input_channels = 2
 elif cfg.data.input_type == 'dem_dxy_pre':
     cfg.data.input_channels = 1
+elif cfg.data.input_type == 'shaded_relief_naip':
+    cfg.data.input_channels = 7
+elif cfg.data.input_type == 'dem_naip':
+    cfg.data.input_channels = 5
+elif cfg.data.input_type == 'dem_derivative_naip':
+    cfg.data.input_channels = 6
+elif cfg.data.input_type == 'dem_dxy_pre_naip':
+    cfg.data.input_channels = 5
 
 cfg.data.eval_pad = False
 
@@ -59,6 +69,7 @@ cfg.train.l2_reg = 1e-6
 cfg.train.lr_decay = 0.9
 cfg.train.lr_decay_every = 3
 cfg.train.shuffle = True
+# originally 100 change to 1 for debugging
 cfg.train.num_epochs = 100
 cfg.train.num_workers = 4
 
