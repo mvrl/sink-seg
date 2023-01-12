@@ -9,6 +9,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
 from model import Unet
+from early_fusion import FuseNet
 from data_factory import get_data
 from config import cfg
 
@@ -54,11 +55,17 @@ def evaluate():
             'The directory with trained model does not exist! Make sure cfg.train.out_dir in config.py has the correct directory name'
         )
 
-    #from drive.MyDrive.ML_dataset.model import Unet
-    model = Unet(in_channels=cfg.data.input_channels,
-                 out_channels=2,
-                 feature_reduction=4,
-                 norm_type=cfg.model.norm_type)
+    if cfg.model.fusion == 'none':
+        model = Unet(in_channels=cfg.data.input_channels,
+                     out_channels=2,
+                     feature_reduction=4,
+                     norm_type=cfg.model.norm_type)
+
+    elif cfg.model.fusion == 'early':
+        model = FuseNet(in_channels=cfg.data.input_channels,
+                        out_channels=2,
+                        feature_reduction=1,
+                        norm_type=cfg.model.norm_type)
 
     device = f'cuda:0' if torch.cuda.is_available() else 'cpu'
     print(f"using device: {device}")
@@ -113,8 +120,12 @@ def evaluate():
                 dem_dxy_naip = data[9].to(device)
                 dem_dxy_pre_naip = data[10].to(device)
 
-                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
-                                    shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+                if cfg.model.fusion == 'none':
+                    predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                        shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+                elif cfg.model.fusion == 'early':
+                    predictions = model(
+                        shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
 
                 predictions = torch.softmax(predictions, dim=1)
 
@@ -217,8 +228,12 @@ def evaluate():
             dem_dxy_naip = data[9].to(device)
             dem_dxy_pre_naip = data[10].to(device)
 
-            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
-                                shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+            if cfg.model.fusion == 'none':
+                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                    shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+            elif cfg.model.fusion == 'early':
+                predictions = model(shaded, dem, naip_image,
+                                    dem_dxy, dem_dxy_pre)
 
             if predictions.shape[2] == 420:
                 starty = 0
@@ -311,8 +326,12 @@ def evaluate():
             right = (col + 1) * cutout_size[0]
             lower = (row + 1) * cutout_size[1]
 
-            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
-                                shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+            if cfg.model.fusion == 'none':
+                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                                    shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+            elif cfg.model.fusion == 'early':
+                predictions = model(shaded, dem, naip_image,
+                                    dem_dxy, dem_dxy_pre)
 
             predictions = torch.softmax(predictions, dim=1)
 

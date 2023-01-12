@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 
 from model import Unet
+from early_fusion import FuseNet
 from data_factory import get_data
 from config import cfg
 
@@ -16,18 +17,25 @@ def main():
     Trained models and training logs (train and vall loss curves) are saved to the disk.
     """
     # get the model
-    model = Unet(in_channels=cfg.data.input_channels,
-                 out_channels=2,
-                 feature_reduction=4,
-                 norm_type=cfg.model.norm_type)
+    if cfg.model.fusion == 'none':
+        model = Unet(in_channels=cfg.data.input_channels,
+                    out_channels=2,
+                    feature_reduction=4,
+                    norm_type=cfg.model.norm_type)
+        
+    elif cfg.model.fusion == 'early':
+        model = FuseNet(in_channels=cfg.data.input_channels,
+                    out_channels=2,
+                    feature_reduction=1,
+                    norm_type=cfg.model.norm_type)
 
     device = f'cuda:0' if torch.cuda.is_available() else 'cpu'
     print(f"using device: {device}")
     model.to(device)
 
     optim = torch.optim.Adam(model.parameters(),
-                             lr=cfg.train.learning_rate,
-                             weight_decay=cfg.train.l2_reg)
+                            lr=cfg.train.learning_rate,
+                            weight_decay=cfg.train.l2_reg)
 
     # get dataloaders
     train_loader, val_loader, _ = get_data(cfg)
@@ -64,6 +72,7 @@ def main():
     for epoch in range(cfg.train.num_epochs):
         # begin training
         loss_train = 0
+        #model.train()
         model.train()
         for i, data in enumerate(train_loader):
             optim.zero_grad()
@@ -84,8 +93,11 @@ def main():
             else:
                 print_now = False
 
-            predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+            if cfg.model.fusion == 'none':
+                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
                                 shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+            elif cfg.model.fusion == 'early':
+                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
 
             loss = criterion(predictions, labels)
 
@@ -97,9 +109,8 @@ def main():
 
             # printing
             if (i + 1) % 20 == 0:
-                print('[Ep ', epoch + 1, '] train loss: ',
-                      loss_train / (i + 1))
-
+                print('[Ep ', epoch + 1, '] train loss: ', loss_train / (i + 1))
+            
             # added for debugging. Comment when doing real training
             #break
 
@@ -112,7 +123,7 @@ def main():
         with torch.no_grad():
             for i, data in enumerate(val_loader):
                 optim.zero_grad()  # clear gradients
-
+                
                 shaded = data[0].to(device)
                 dem = data[1].to(device).unsqueeze(1)
                 naip_image = data[2].to(device)
@@ -124,8 +135,11 @@ def main():
                 dem_dxy_naip = data[9].to(device)
                 dem_dxy_pre_naip = data[10].to(device)
 
-                predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
+                if cfg.model.fusion == 'none':
+                    predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
                                     shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
+                elif cfg.model.fusion == 'early':
+                    predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
 
                 loss = criterion(predictions, labels)
 
