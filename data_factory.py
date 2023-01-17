@@ -6,6 +6,7 @@ from PIL import Image
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as transforms_function
 from torch.utils.data import Dataset, DataLoader
+from config import cfg
 
 # handle PIL errors
 from PIL import ImageFile
@@ -54,8 +55,6 @@ class dataset_sinkhole(Dataset):
         self.to_tensor = transforms.ToTensor()
 
         # Normalization methods and values
-        #from drive.MyDrive.ML_dataset.config import cfg
-        from config import cfg
         self.normalization_shaded = cfg.data.normalize_shaded
         self.normalization_dem = cfg.data.normalize_dem
         self.normalize_dem_ddxy = cfg.data.normalize_dem_ddxy
@@ -98,7 +97,8 @@ class dataset_sinkhole(Dataset):
             dem = transforms_function.crop(self.full_dem, i, j, h, w)
             dem.load()
 
-            dem_dxy_pre = transforms_function.crop(self.dem_dxy_pre, i, j, h, w)
+            dem_dxy_pre = transforms_function.crop(
+                self.dem_dxy_pre, i, j, h, w)
             dem_dxy_pre.load()
 
             # dem derivatives
@@ -175,6 +175,10 @@ class dataset_sinkhole(Dataset):
             max_now = np.max(dem_np)
             dem_np = (dem_np - min_now) / (max_now - min_now + 1e-7)
 
+        elif self.normalization_dem == '0_to_255':
+            dem_np = (dem_np - self.dem_min) / (self.dem_max - self.dem_min)
+            dem_np = 255 * dem_np  # [0, 255]
+
         elif self.normalization_dem == 'none':
             # no normalization needed
             pass
@@ -206,6 +210,16 @@ class dataset_sinkhole(Dataset):
             dem_dy_mean = -0.0038596862
             dem_dy_std = 0.41352344
             dem_dy = (dem_dy - dem_dy_mean) / dem_dy_std
+        elif self.normalize_dem_ddxy == '0_to_255':
+            dem_dx_min = -55.328857
+            dem_dx_max = 26.779816
+            dem_dx = (dem_dx - dem_dx_min) / (dem_dx_max - dem_dx_min)
+            dem_dx = 255 * dem_dx
+
+            dem_dy_min = -27.779816
+            dem_dy_max = 45.826863
+            dem_dy = (dem_dy - dem_dy_min) / (dem_dy_max - dem_dy_min)
+            dem_dy = 255 * dem_dy
 
         # normalize dem derivative: this is pre-computed, conventional slope
         dem_dxy_pre = np.array(dem_dxy_pre).astype(np.float32)
@@ -219,6 +233,9 @@ class dataset_sinkhole(Dataset):
 
         elif self.normalize_dem_pre == '0_to_1':
             dem_dxy_pre = (dem_dxy_pre - 0) / 84.89005  # min=0, max=84.89005
+        elif self.normalize_dem_pre == '0_to_255':
+            dem_dxy_pre = (dem_dxy_pre - 0) / 84.89005
+            dem_dxy_pre = 255 * dem_dxy_pre
 
         # normalize naip
         naip = self.to_tensor(naip).float()
@@ -246,22 +263,15 @@ class dataset_sinkhole(Dataset):
         # combine dem and its varients with naip
         image_naip = torch.cat([image, naip], dim=0)
         dem_naip = torch.cat([dem_tensor.unsqueeze(0), naip], dim=0)
-        # print(dem_dxy.shape)
-        # print(naip.shape)
-        if self.mode != 'train':
-            diff = max(dem_dxy.shape[1], naip.shape[1]) - min(dem_dxy.shape[1], naip.shape[1])
-            dem_dxy_naip = torch.cat([nn.ZeroPad2d((0, 0, 0, diff))(dem_dxy), naip], dim=0)
+
+        if dem_dxy.shape[1] != naip.shape[1]:
+            diff = abs(dem_dxy.shape[1] - naip.shape[1])
+            dem_dxy_naip = torch.cat(
+                [nn.ZeroPad2d((0, 0, 0, diff))(dem_dxy), naip], dim=0)
         else:
             dem_dxy_naip = torch.cat([dem_dxy, naip], dim=0)
-        dem_dxy_pre_naip = torch.cat([dem_dxy_pre_tensor.unsqueeze(0), naip], dim=0)
-
-        # print('image size:', image.shape)
-        # print('dem_tensor size:', dem_tensor.shape)
-        # print('naip size:', naip.shape)
-        # print('label size:', label.shape)
-        # print('dem_dxy size:', dem_dxy.shape)
-        # print('dem_dxy_pre_tensor', dem_dxy_pre_tensor.shape)
-        # print(dem_dxy_naip.shape)
+        dem_dxy_pre_naip = torch.cat(
+            [dem_dxy_pre_tensor.unsqueeze(0), naip], dim=0)
 
         return image, dem_tensor, naip, label, idx, dem_dxy, dem_dxy_pre_tensor, \
             image_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip
@@ -344,6 +354,8 @@ def get_data(cfg):
     NAIP_train = NAIP_full.crop((0, 0, train_width, train_val_height))
     NAIP_train.load()
 
+    print('naip train size:', NAIP_train.size)
+
     label_train = label_full.crop((0, 0, train_width, train_val_height))
     label_train.load()
     print('label train size:', label_train.size)
@@ -374,6 +386,8 @@ def get_data(cfg):
     NAIP_val = NAIP_full.crop(
         (train_width, 0, image_full.size[0], train_val_height))
     NAIP_val.load()
+
+    print('naip val size:', NAIP_val.size)
 
     label_val = label_full.crop(
         (train_width, 0, image_full.size[0], train_val_height))
