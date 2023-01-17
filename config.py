@@ -6,18 +6,20 @@ cfg = edict()
 
 # Model
 cfg.model = edict()
-cfg.model.name = 'unet'
+# 'unet', 'fusenet', 'unet_early'
+cfg.model.name = 'fusenet'
 cfg.model.norm_type = 'batch'  # 'batch', instance
-cfg.model.fusion = True  # whether to use fusion in the model
+# Fusion type for the model
+cfg.model.pre_trained = False
 
 # Data
 cfg.data = edict()
-cfg.data.data_dir = './drive/MyDrive/ML_dataset'
+cfg.data.data_dir = '../sink-seg-doc/data'
 cfg.data.name = 'full_tiles'
 
 # define model input. options: 'dem', 'shaded_relief', 'naip', 'dem_derivative', 'dem_dxy_pre'
 # new added: 'shaded_relief_naip', 'dem_naip', 'dem_derivative_naip', 'dem_dxy_pre_naip'
-cfg.data.input_type = 'dem_dxy_pre_naip'
+cfg.data.input_type = 'dem_derivative_naip'
 
 if cfg.data.input_type == 'dem':
     cfg.data.input_channels = 1
@@ -42,8 +44,8 @@ cfg.data.eval_pad = False
 
 # Normalization of inputs
 
-# DEM normalization. Options: '0_to_1', 'unit_gaussian', 'instance', 'none'
-cfg.data.normalize_dem = 'none'
+# DEM normalization. Options: '0_to_1', 'unit_gaussian', 'instance', 'none', '0_to_255'
+cfg.data.normalize_dem = '0_to_255'
 
 # shaded relief normalization. Options: '0_to_1', 'unit_gaussian', 'instance'
 cfg.data.normalize_shaded = '0_to_1'
@@ -51,11 +53,11 @@ cfg.data.normalize_shaded = '0_to_1'
 # NAIP normalization. Options: '0_to_1', 'unit_gaussian', 'instance', 'none'
 cfg.data.normalize_naip = 'none'
 
-# DEM gradient normalization. Options: 'instance' , 'none', '0_to_1', 'unit_gaussian'
+# DEM gradient normalization. Options: 'instance' , 'none', '0_to_1', 'unit_gaussian', '0_to_255'
 cfg.data.normalize_dem_ddxy = 'unit_gaussian'
 
-# normalization for DEM pre-computed gradients. Options: 'none', 'instance', 'unit_gaussian', '0_to_1'
-cfg.data.normalize_dem_dxy_pre = 'none'
+# normalization for DEM pre-computed gradients. Options: 'none', 'instance', 'unit_gaussian', '0_to_1', '0_to_255'
+cfg.data.normalize_dem_dxy_pre = '0_to_255'
 
 cfg.data.mode = 'train'
 cfg.data.cutout_size = (400, 400)
@@ -67,9 +69,8 @@ cfg.train.batch_size = 14
 cfg.train.learning_rate = 5e-4  # initial learning rate
 cfg.train.l2_reg = 1e-6
 cfg.train.lr_decay = 0.9
-cfg.train.lr_decay_every = 3
+cfg.train.lr_decay_every = 10
 cfg.train.shuffle = True
-# originally 100 change to 1 for debugging
 cfg.train.num_epochs = 100
 cfg.train.num_workers = 4
 
