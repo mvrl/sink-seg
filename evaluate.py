@@ -8,7 +8,7 @@ from sklearn.metrics import average_precision_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
-from model import Unet
+from model import Unet, Unet_early
 from early_fusion import FuseNet
 from data_factory import get_data
 from config import cfg
@@ -55,16 +55,23 @@ def evaluate():
             'The directory with trained model does not exist! Make sure cfg.train.out_dir in config.py has the correct directory name'
         )
 
-    if cfg.model.fusion == 'none':
+    if cfg.model.name == 'unet':
         model = Unet(in_channels=cfg.data.input_channels,
                      out_channels=2,
                      feature_reduction=4,
                      norm_type=cfg.model.norm_type)
 
-    elif cfg.model.fusion == 'early':
+    elif cfg.model.name == 'unet_early':
+        model = Unet_early(in_channels=cfg.data.input_channels,
+                           out_channels=2,
+                           feature_reduction=4,
+                           norm_type=cfg.model.norm_type)
+
+    elif cfg.model.name == 'fusenet':
+        # change feature reduction to 1 if use pre-trained model
         model = FuseNet(in_channels=cfg.data.input_channels,
                         out_channels=2,
-                        feature_reduction=1,
+                        feature_reduction=4,
                         norm_type=cfg.model.norm_type)
 
     device = f'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -120,10 +127,13 @@ def evaluate():
                 dem_dxy_naip = data[9].to(device)
                 dem_dxy_pre_naip = data[10].to(device)
 
-                if cfg.model.fusion == 'none':
+                if dem_dxy.shape[2] != naip_image.shape[2]:
+                    continue
+
+                if cfg.model.name == 'unet':
                     predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
                                         shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
-                elif cfg.model.fusion == 'early':
+                else:
                     predictions = model(
                         shaded, dem, naip_image, dem_dxy, dem_dxy_pre)
 
@@ -228,10 +238,10 @@ def evaluate():
             dem_dxy_naip = data[9].to(device)
             dem_dxy_pre_naip = data[10].to(device)
 
-            if cfg.model.fusion == 'none':
+            if cfg.model.name == 'unet':
                 predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
                                     shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
-            elif cfg.model.fusion == 'early':
+            else:
                 predictions = model(shaded, dem, naip_image,
                                     dem_dxy, dem_dxy_pre)
 
@@ -326,10 +336,10 @@ def evaluate():
             right = (col + 1) * cutout_size[0]
             lower = (row + 1) * cutout_size[1]
 
-            if cfg.model.fusion == 'none':
+            if cfg.model.name == 'unet':
                 predictions = model(shaded, dem, naip_image, dem_dxy, dem_dxy_pre,
                                     shaded_naip, dem_naip, dem_dxy_naip, dem_dxy_pre_naip)
-            elif cfg.model.fusion == 'early':
+            else:
                 predictions = model(shaded, dem, naip_image,
                                     dem_dxy, dem_dxy_pre)
 
