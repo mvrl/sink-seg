@@ -84,11 +84,6 @@ class FuseNet(nn.Module):
         set_parameter_requires_grad(vgg16_naip, feature_extracting=True)
         set_parameter_requires_grad(vgg16_naip, feature_extracting=True)
 
-        # return_nodes = {'features.5': 'dem_down1', 'features.12': 'dem_down2',
-        #             'features.22': 'dem_down3', 'features.32': 'dem_down4',
-        #             'features.43': 'dem_down5'}
-        # self.dem_down = create_feature_extractor(vgg16_dem, return_nodes=return_nodes)
-
         if cfg.model.pre_trained:
             self.dem_down1 = vgg16_dem.features[0:6]
             self.naip_down1 = vgg16_naip.features[0:6]

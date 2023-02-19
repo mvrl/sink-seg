@@ -31,10 +31,16 @@ def main():
 
     elif cfg.model.name == 'fusenet':
         # change feature reduction to 1 if use pre-trained model
-        model = FuseNet(in_channels=cfg.data.input_channels,
-                        out_channels=2,
-                        feature_reduction=4,
-                        norm_type=cfg.model.norm_type)
+        if cfg.model.pre_trained:
+            model = FuseNet(in_channels=cfg.data.input_channels,
+                            out_channels=2,
+                            feature_reduction=1,
+                            norm_type=cfg.model.norm_type)
+        else:
+            model = FuseNet(in_channels=cfg.data.input_channels,
+                            out_channels=2,
+                            feature_reduction=4,
+                            norm_type=cfg.model.norm_type)
 
     device = f'cuda:0' if torch.cuda.is_available() else 'cpu'
     print(f"using device: {device}")

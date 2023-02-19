@@ -252,6 +252,7 @@ class Unet_early(nn.Module):
         input_now = self.set_input(shaded, dem, naip, dem_dxy, dem_dxy_pre)
 
         if input_now[0].shape[2] != input_now[1].shape[2]:
+            #print('diff')
             diff = abs(input_now[0].shape[2]-input_now[1].shape[2])
             pad = nn.ZeroPad2d((0, 0, 0, diff))
             input_now[0] = pad(input_now[0])

@@ -12,7 +12,8 @@ from sklearn.metrics import average_precision_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
-from model import Unet
+from model import Unet, Unet_early
+from early_fusion import FuseNet
 from data_factory import get_data
 from config import cfg
 
@@ -32,11 +33,30 @@ def visualize():
             'The directory with trained model does not exist! Make sure cfg.train.out_dir in config.py has the correct directory name'
         )
 
-    model = Unet(in_channels=cfg.data.input_channels,
-                 out_channels=2,
-                 feature_reduction=4,
-                 norm_type=cfg.model.norm_type)
-    model.to('cuda:0')
+    if cfg.model.name == 'unet':
+        model = Unet(in_channels=cfg.data.input_channels,
+                     out_channels=2,
+                     feature_reduction=4,
+                     norm_type=cfg.model.norm_type)
+
+    elif cfg.model.name == 'unet_early':
+        model = Unet_early(in_channels=cfg.data.input_channels,
+                           out_channels=2,
+                           feature_reduction=4,
+                           norm_type=cfg.model.norm_type)
+
+    elif cfg.model.name == 'fusenet':
+        # change feature reduction to 1 if use pre-trained model
+        if cfg.model.pre_trained:
+            model = FuseNet(in_channels=cfg.data.input_channels,
+                            out_channels=2,
+                            feature_reduction=1,
+                            norm_type=cfg.model.norm_type)
+        else:
+            model = FuseNet(in_channels=cfg.data.input_channels,
+                            out_channels=2,
+                            feature_reduction=4,
+                            norm_type=cfg.model.norm_type)
 
     # which checkpoint to load: best (lowest val loss) or the one saved at the end of training
     if eval_mode == 'best':
