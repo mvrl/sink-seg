@@ -9,7 +9,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
 from model import Unet, Unet_early
-from early_fusion import FuseNet
+from fusenet import FuseNet
 from data_factory import get_data
 from config import cfg
 
