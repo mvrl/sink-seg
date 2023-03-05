@@ -75,16 +75,31 @@ class FuseNet(nn.Module):
 
         # use the pre_trained vgg16 model
         vgg16_naip = torchvision.models.vgg16_bn(weights='DEFAULT')
-        vgg16_naip.features[0] = nn.Conv2d(4, 64, kernel_size=(3, 3),
-                                           stride=(1, 1), padding=(1, 1))
+        avg = torch.mean(vgg16_naip.features[0].weight.data, dim=1)
+        avg = avg.unsqueeze(1)
+        conv11d = nn.Conv2d(4, 64, kernel_size=(3, 3),
+                            stride=(1, 1), padding=(1, 1))
+        conv11d.weight.data = torch.concat([avg]*4, axis=1)
+        vgg16_naip.features[0] = conv11d
+
         vgg16_dem = torchvision.models.vgg16_bn(weights='DEFAULT')
-        vgg16_dem.features[0] = nn.Conv2d(in_channels-4, 64,
-                                          kernel_size=(3, 3), stride=(1, 1),
-                                          padding=(1, 1))
+        avg = torch.mean(vgg16_dem.features[0].weight.data, dim=1)
+        avg = avg.unsqueeze(1)
+        depth_cn = in_channels-4
+        conv11d = nn.Conv2d(depth_cn, 64, kernel_size=(3, 3),
+                            stride=(1, 1), padding=(1, 1))
+        if depth_cn == 1:
+            conv11d.weight.data = avg
+        elif depth_cn == 2:
+            conv11d.weight.data = torch.concat([avg]*2, axis=1) 
+
+        vgg16_dem.features[0] = conv11d
+
         set_parameter_requires_grad(vgg16_naip, feature_extracting=True)
-        set_parameter_requires_grad(vgg16_naip, feature_extracting=True)
+        set_parameter_requires_grad(vgg16_dem, feature_extracting=True)
 
         if cfg.model.pre_trained:
+            print('Using pre-trained vgg16 model')
             self.dem_down1 = vgg16_dem.features[0:6]
             self.naip_down1 = vgg16_naip.features[0:6]
 
@@ -100,6 +115,7 @@ class FuseNet(nn.Module):
             self.dem_down5 = vgg16_dem.features[34:43]
             self.naip_down5 = vgg16_naip.features[34:43]
         else:
+            print('Not using pre-trained vgg16 model')
             self.dem_down1 = double_conv(
                 in_channels-4, int(64 / feature_reduction))
             self.naip_down1 = double_conv(4, int(64 / feature_reduction))
@@ -169,7 +185,7 @@ class FuseNet(nn.Module):
         #print(input_now[0].shape)
         x1_dem = self.dem_down1(input_now[0])
         x1_naip = self.naip_down1(input_now[1])
-        x1 = x1_dem + x1_naip
+        x1 = (x1_dem + x1_naip) / 2
         x1_dem = F.max_pool2d(x1_dem, kernel_size=2, stride=2)
         x1, indices1 = F.max_pool2d(
             x1, kernel_size=2, stride=2, return_indices=True)
@@ -177,7 +193,7 @@ class FuseNet(nn.Module):
 
         x2_dem = self.dem_down2(x1_dem)
         x2_naip = self.naip_down2(x1)
-        x2 = x2_dem + x2_naip
+        x2 = (x2_dem + x2_naip) / 2
         x2_dem = F.max_pool2d(x2_dem, kernel_size=2, stride=2)
         x2, indices2 = F.max_pool2d(
             x2, kernel_size=2, stride=2, return_indices=True)
@@ -185,43 +201,43 @@ class FuseNet(nn.Module):
 
         x3_dem = self.dem_down3(x2_dem)
         x3_naip = self.naip_down3(x2)
-        x3 = x3_dem + x3_naip
+        x3 = (x3_dem + x3_naip) / 2
         x3_dem = F.dropout(F.max_pool2d(
             x3_dem, kernel_size=2, stride=2), p=0.2)
         x3, indices3 = F.max_pool2d(
             x3, kernel_size=2, stride=2, return_indices=True)
-        x3 = F.dropout(x3, p=0.2)
+        x3 = F.dropout(x3, p=0.4)
         #print(x3.shape, indices3.shape)
 
         x4_dem = self.dem_down4(x3_dem)
         x4_naip = self.naip_down4(x3)
-        x4 = x4_dem + x4_naip
+        x4 = (x4_dem + x4_naip) / 2
         x4_dem = F.dropout(F.max_pool2d(
             x4_dem, kernel_size=2, stride=2), p=0.2)
         x4, indices4 = F.max_pool2d(
             x4, kernel_size=2, stride=2, return_indices=True)
-        x4 = F.dropout(x4, p=0.2)
+        x4 = F.dropout(x4, p=0.4)
         #print(x4.shape, indices4.shape)
 
         x5_dem = self.dem_down5(x4_dem)
         x5_naip = self.naip_down5(x4)
-        x5 = x5_dem + x5_naip
+        x5 = (x5_dem + x5_naip) / 2
         x5, indices5 = F.max_pool2d(
             x5, kernel_size=2, stride=2, return_indices=True)
-        x5 = F.dropout(x5, p=0.2)
+        x5 = F.dropout(x5, p=0.4)
         #print(x5.shape, indices5.shape)
 
         x = F.max_unpool2d(x5, indices5, kernel_size=2,
                            stride=2, output_size=x5_naip.shape)
-        x = F.dropout(self.up1(x), p=0.2)
+        x = F.dropout(self.up1(x), p=0.4)
 
         x = F.max_unpool2d(x, indices4, kernel_size=2,
                            stride=2, output_size=x4_naip.shape)
-        x = F.dropout(self.up2(x), p=0.2)
+        x = F.dropout(self.up2(x), p=0.4)
 
         x = F.max_unpool2d(x, indices3, kernel_size=2,
                            stride=2, output_size=x3_naip.shape)
-        x = F.dropout(self.up3(x), p=0.2)
+        x = F.dropout(self.up3(x), p=0.4)
 
         x = F.max_unpool2d(x, indices2, kernel_size=2,
                            stride=2, output_size=x2_naip.shape)
