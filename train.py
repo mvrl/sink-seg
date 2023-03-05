@@ -46,12 +46,13 @@ def main():
     print(f"using device: {device}")
     model.to(device)
 
-    optim = torch.optim.Adam(model.parameters(),
-                             lr=cfg.train.learning_rate,
-                             weight_decay=cfg.train.l2_reg)
-    # optim = torch.optim.SGD(model.parameters(),
-    #                         lr=cfg.train.learning_rate,
-    #                         weight_decay=cfg.train.l2_reg)
+    # optim = torch.optim.Adam(model.parameters(),
+    #                          lr=cfg.train.learning_rate,
+    #                          weight_decay=cfg.train.l2_reg)
+    optim = torch.optim.SGD(model.parameters(),
+                            lr=cfg.train.learning_rate,
+                            momentum=0.9,
+                            weight_decay=cfg.train.l2_reg)
 
     # get dataloaders
     train_loader, val_loader, _ = get_data(cfg)
@@ -205,6 +206,16 @@ def main():
         result_file.write(str(val_loss_log))
         result_file.write('\nTraining loss  ')
         result_file.write(str(train_loss_log))
+    
+    param = os.path.join(out_dir, 'parameters.txt')
+    with open(param, 'w') as result_file:
+        result_file.write('Model used: ' + cfg.model.name + '\n')
+        result_file.write('Input: ' + cfg.data.input_type + '\n')
+        result_file.write('Normalization inputs: \n')
+        norm = '{}, {}, {}, {}, {}\n'.format(cfg.data.normalize_dem, cfg.data.normalize_shaded, 
+                                           cfg.data.normalize_naip, cfg.data.normalize_dem_ddxy,
+                                           cfg.data.normalize_dem_dxy_pre)
+        result_file.write(norm)
 
 
 if __name__ == '__main__':
