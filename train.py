@@ -209,13 +209,7 @@ def main():
     
     param = os.path.join(out_dir, 'parameters.txt')
     with open(param, 'w') as result_file:
-        result_file.write('Model used: ' + cfg.model.name + '\n')
-        result_file.write('Input: ' + cfg.data.input_type + '\n')
-        result_file.write('Normalization inputs: \n')
-        norm = '{}, {}, {}, {}, {}\n'.format(cfg.data.normalize_dem, cfg.data.normalize_shaded, 
-                                           cfg.data.normalize_naip, cfg.data.normalize_dem_ddxy,
-                                           cfg.data.normalize_dem_dxy_pre)
-        result_file.write(norm)
+        result_file.write(str(cfg))
 
 
 if __name__ == '__main__':
