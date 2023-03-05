@@ -4,6 +4,11 @@ import torch.nn.functional as F
 from torchvision.models.feature_extraction import create_feature_extractor
 from config import cfg
 
+"""
+    FuseNet implementation
+    FuseNet: https://vision.in.tum.de/_media/spezial/bib/hazirbasma2016fusenet.pdf
+    Code adopted from: https://github.com/MehmetAygun/fusenet-pytorch
+    """
 
 def set_parameter_requires_grad(model, feature_extracting):
     # we do not need gradients for feature extraction
