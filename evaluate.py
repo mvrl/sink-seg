@@ -98,6 +98,7 @@ def evaluate():
     # enable padding in the evaluation
     cfg.data.eval_pad = True
     cfg.train.shuffle = False
+    cfg.data.mode = 'val'
     _, data_loader_val, data_loader_test = get_data(cfg)
 
     num_classes = 2

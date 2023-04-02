@@ -89,7 +89,7 @@ def main():
     for epoch in range(cfg.train.num_epochs):
         # begin training
         loss_train = 0
-        #model.train()
+        cfg.data.mode = 'train'
         model.train()
         for i, data in enumerate(train_loader):
             optim.zero_grad()
@@ -140,6 +140,7 @@ def main():
         # begin validation
         loss_val = 0
         model.eval()
+        cfg.data.mode = 'eval'
         with torch.no_grad():
             for i, data in enumerate(val_loader):
                 optim.zero_grad()  # clear gradients
