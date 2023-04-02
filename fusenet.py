@@ -211,7 +211,9 @@ class FuseNet(nn.Module):
             x3_dem, kernel_size=2, stride=2), p=0.2)
         x3, indices3 = F.max_pool2d(
             x3, kernel_size=2, stride=2, return_indices=True)
-        x3 = F.dropout(x3, p=0.4)
+        
+        if cfg.data.mode == 'train':
+            x3 = F.dropout(x3, p=0.4)
         #print(x3.shape, indices3.shape)
 
         x4_dem = self.dem_down4(x3_dem)
@@ -221,7 +223,9 @@ class FuseNet(nn.Module):
             x4_dem, kernel_size=2, stride=2), p=0.2)
         x4, indices4 = F.max_pool2d(
             x4, kernel_size=2, stride=2, return_indices=True)
-        x4 = F.dropout(x4, p=0.4)
+        
+        if cfg.data.mode == 'train':
+            x4 = F.dropout(x4, p=0.4)
         #print(x4.shape, indices4.shape)
 
         x5_dem = self.dem_down5(x4_dem)
@@ -229,20 +233,28 @@ class FuseNet(nn.Module):
         x5 = (x5_dem + x5_naip) / 2
         x5, indices5 = F.max_pool2d(
             x5, kernel_size=2, stride=2, return_indices=True)
-        x5 = F.dropout(x5, p=0.4)
+        
+        if cfg.data.mode == 'train':
+            x5 = F.dropout(x5, p=0.4)
         #print(x5.shape, indices5.shape)
 
         x = F.max_unpool2d(x5, indices5, kernel_size=2,
                            stride=2, output_size=x5_naip.shape)
-        x = F.dropout(self.up1(x), p=0.4)
+        x = self.up1(x)
+        if cfg.data.mode == 'train':
+            x = F.dropout(x, p=0.4)
 
         x = F.max_unpool2d(x, indices4, kernel_size=2,
                            stride=2, output_size=x4_naip.shape)
-        x = F.dropout(self.up2(x), p=0.4)
+        x = self.up2(x)
+        if cfg.data.mode == 'train':
+            x = F.dropout(x, p=0.4)
 
         x = F.max_unpool2d(x, indices3, kernel_size=2,
                            stride=2, output_size=x3_naip.shape)
-        x = F.dropout(self.up3(x), p=0.4)
+        x = self.up3(x)
+        if cfg.data.mode == 'train':
+            x = F.dropout(x, p=0.4)
 
         x = F.max_unpool2d(x, indices2, kernel_size=2,
                            stride=2, output_size=x2_naip.shape)
