@@ -248,6 +248,10 @@ def adaptive_train():
     optim = torch.optim.Adam(model_t.parameters(),
                              lr=cfg.train.learning_rate,
                              weight_decay=cfg.train.l2_reg)
+    # optim = torch.optim.SGD(model_t.parameters(),
+    #                         lr=cfg.train.learning_rate,
+    #                         momentum=0.9,
+    #                         weight_decay=cfg.train.l2_reg)
     
     # lr schedular
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -377,7 +381,7 @@ def evaluate():
         raise ValueError(
             'The directory with trained model does not exist! Make sure cfg.train.out_dir in config.py has the correct directory name'
         )
-    fname = os.path.join(out_dir, 'model_dict.pth')
+    fname = os.path.join(out_dir, 'model_t_dict.pth')
     model_t.load_state_dict(torch.load(fname))
     model_t.eval()
 
