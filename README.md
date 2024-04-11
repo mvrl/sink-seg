@@ -1,8 +1,12 @@
-# Sinkhole Segmentation
+# Automatic Segmentation of Sinkholes Using a Convolutional Neural Network
+
+[M. Usman Rafique](http://urafique.com), [Nathan Jacobs](https://jacobsn.github.io/), [Junfeng Zhu](https://ees.as.uky.edu/users/jzh226)
+
+## [Paper](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2021EA002195) &emsp; [PDF](https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/2021EA002195) &emsp; [Dataset](https://doi.org/10.5281/zenodo.5789436)
 
 This repository contains PyTorch code for the following paper:
 
-M. Usman Rafique, Junfeng Zhu, Nathan Jacobs "Automatic Segmentation of Sinkholes Using a Convolutional Neural Network", under review.
+M. Usman Rafique, Junfeng Zhu, Nathan Jacobs "Automatic Segmentation of Sinkholes Using a Convolutional Neural Network", AGU Earth and Space Science Journal, 2022.
 
 ## Setting Up
 
@@ -53,3 +57,16 @@ As before, it is required that `cfg.train.out_dir` in `config.py` specifies a di
 ## Acknowledgement
 
 We thank Nicole Wong and Aram Ansary Ogholbake for testing the code.
+
+
+## Citation
+If you find this paper or code helpful, please cite our paper:
+<pre>
+@article{rafique2022automatic,
+  title={Automatic Segmentation of Sinkholes using a Convolutional Neural Network},
+  author={Rafique, M. Usman and Zhu, Junfeng and Jacobs, Nathan},
+  journal={AGU Earth and Space Science Journal},
+  year={2022},
+  publisher={Wiley Online Library}
+}
+</pre>
