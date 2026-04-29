@@ -90,7 +90,7 @@ class outconv(nn.Module):
 class Unet(nn.Module):
     """
     This is a standard UNet with minor tweaks. The changes are:
-    - in upsamping, we use nearest neighbor interpolation to avpoid aliasing artifacts
+    - in upsamping, we use nearest neighbor interpolation to avoid aliasing artifacts
     - we have a parameter, feature_reduction, that can be used to use fewer feature maps. When feature_reduction=2, the model will have half the feature maps than the original UNet.
     - We can replace BatchNorm with a norm, such as InstanceNorm.
     """

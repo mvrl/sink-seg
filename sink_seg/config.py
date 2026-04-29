@@ -62,4 +62,4 @@ cfg.train.shuffle = True
 cfg.train.num_epochs = 100
 cfg.train.num_workers = 4
 
-cfg.train.out_dir = './outputs/dem_derovative1'
+cfg.train.out_dir = './outputs/dem_derivative1'
