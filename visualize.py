@@ -1,20 +1,9 @@
-# This code initially performed both evaluation and visualization. The evaluation code has now been moved to eval_threshold. To avoid confusion, I am not renaming this file for now
-
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import roc_curve
-
-from model import Unet
-from data_factory import get_data
-from config import cfg
+from sink_seg import Unet, get_data, cfg
 
 
 def visualize():

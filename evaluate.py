@@ -8,9 +8,7 @@ from sklearn.metrics import average_precision_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
-from model import Unet
-from data_factory import get_data
-from config import cfg
+from sink_seg import Unet, get_data, cfg
 
 
 def get_confusion_matrix_binary(label, pred, size, num_class, ignore=-1):
@@ -21,7 +19,7 @@ def get_confusion_matrix_binary(label, pred, size, num_class, ignore=-1):
     seg_pred = np.asarray(pred.cpu().numpy(), dtype=np.uint8)
 
     seg_gt = np.asarray(label.cpu().numpy()[:, :size[-2], :size[-1]],
-                        dtype=np.int)
+                        dtype=np.int32)
 
     ignore_index = seg_gt != ignore
     seg_gt = seg_gt[ignore_index]
@@ -54,7 +52,7 @@ def evaluate():
             'The directory with trained model does not exist! Make sure cfg.train.out_dir in config.py has the correct directory name'
         )
 
-    from model import Unet
+    from sink_seg import Unet
     model = Unet(in_channels=cfg.data.input_channels,
                  out_channels=2,
                  feature_reduction=4,
