@@ -8,51 +8,75 @@ This repository contains PyTorch code for the following paper:
 
 M. Usman Rafique, Junfeng Zhu, Nathan Jacobs "Automatic Segmentation of Sinkholes Using a Convolutional Neural Network", AGU Earth and Space Science Journal, 2022.
 
+## Repository Structure
+
+```
+sink_seg/           # Python package (model, data, config)
+  __init__.py
+  config.py         # all configurable settings
+  model.py          # UNet model definition
+  data.py           # dataset class and dataloaders
+train.py            # entry point: train a model
+evaluate.py         # entry point: evaluate a trained model
+visualize.py        # entry point: generate qualitative results
+environment.yml     # conda environment
+requirements.txt    # pip requirements
+pyproject.toml      # packaging metadata
+```
+
 ## Setting Up
 
-### Installation
+### Option A — conda (recommended)
 
-We recommend using a virtual environment with anaconda. If you don't already have anaconda installed, please visit this page to install anaconda: [https://docs.anaconda.com/anaconda/install/index.html](https://docs.anaconda.com/anaconda/install/index.html)
+```bash
+conda env create -f environment.yml
+conda activate sink-seg
+pip install -e .
+```
 
-We provide a virtual environment  file `environment.yml` in this repository that can be used to make a suitable virtual environment. In terminal, go to the path of this repo and use this command:
+### Option B — pip only
 
-`conda env create -f environment.yml`
+```bash
+pip install -r requirements.txt
+pip install -e .
+```
 
-Once you set up the virtual environment (named  `sinkhole`), you can activate it by:
-
-`conda activate sinkhole`
+> **PyTorch note:** The commands above install the CPU-only build of PyTorch.  
+> For GPU support, follow the instructions at <https://pytorch.org/get-started/locally/> to install a CUDA-enabled wheel before running the commands above.
 
 ### Dataset
 
 Our dataset has been publicly released at Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5789436.svg)](https://doi.org/10.5281/zenodo.5789436)
 
-Please download all the files in a directory named `data` in this repository. The data is released under the Creative Commons Attribution 4.0 license.
+Please download all the files into a directory named `data` inside this repository. The data is released under the Creative Commons Attribution 4.0 license.
+
+## Configuration
+
+All settings (input modality, normalization, batch size, learning rate, output directory, …) live in `sink_seg/config.py`. Edit that file before running any of the scripts below.
 
 ## Training
 
-To train a model, first set up the required settings in the `config.py` file. The default settings use two-channel DEM derivatives as input and a Unit Gaussian normalization. Other inputs and normalization options are available. Additionally, data and optimization settings can also be set in the config file.
+```bash
+python train.py
+```
 
-To start training, simply use the command:
-
-`python3 train.py`
-
-At the end of the training, the trained model checkpoint and training logs will be saved in the `cfg.train.out_dir` specified in the `config.py` file.
+The trained model checkpoint and training logs will be saved to the directory specified by `cfg.train.out_dir` in `sink_seg/config.py`.
 
 ## Evaluation
 
-To evaluate a trained model, set the same `cfg.train.out_dir` in `config.py` that was used to train the model and run the command:
+```bash
+python evaluate.py
+```
 
-`python3 evaluate.py`
-
-Metrics will be displayed in the terminal and saved to the `cfg.train.out_dir` directory. This script performs a sweep of different thresholds on the val set and saves the best threshold in a file `best_threshold.txt` as well.
+This performs a threshold sweep on the validation set, saves the best threshold to `best_threshold.txt`, and writes full metrics to `cfg.train.out_dir`.
 
 ## Visualization
 
-To generate qualitative visual results, run the command 
+```bash
+python visualize.py
+```
 
-`python3 visualize.py`
-
-As before, it is required that `cfg.train.out_dir` in `config.py` specifies a directory that contains a trained model checkpoint.
+Saves 100 cutout-level qualitative results (DEM, soft prediction, binary prediction, ground-truth) to `<out_dir>/cutout_results/`.
 
 ## Acknowledgement
 

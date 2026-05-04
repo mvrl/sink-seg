@@ -4,9 +4,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-from model import Unet
-from data_factory import get_data
-from config import cfg
+from sink_seg import Unet, get_data, cfg
 
 
 def main():

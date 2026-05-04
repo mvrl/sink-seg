@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sink-seg"
+version = "0.1.0"
+description = "Automatic Segmentation of Sinkholes Using a Convolutional Neural Network"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=1.10",
+    "torchvision>=0.11",
+    "numpy>=1.21",
+    "pillow>=8.4",
+    "matplotlib>=3.5",
+    "scikit-learn>=1.0",
+    "easydict>=1.9",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mvrl/sink-seg"
+"Paper" = "https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2021EA002195"
+"Dataset" = "https://doi.org/10.5281/zenodo.5789436"
